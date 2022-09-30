@@ -1,0 +1,15 @@
+**/package-lock.json
+**/pnpm-lock.yaml
+**/node_modules
+**/dist
+**/.vscode
+**/.DS_Store
+**/yarn.lock
+**/.env.*
+**/.idea
+**/*.iml
+deploy.log
+# Optional eslint cache
+**/.eslintcache
+**/all-dist
+**/__tests__

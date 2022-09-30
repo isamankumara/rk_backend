@@ -1,0 +1,25 @@
+runtime: nodejs
+env: flex
+
+  # https://cloud.google.com/appengine/docs/standard#instance_classes
+# instance_class: B4
+
+manual_scaling:
+  instances: 1
+resources:
+  cpu: 1
+  memory_gb: 1
+  disk_size_gb: 10
+
+handlers:
+- url: /.*
+  secure: always
+  script: auto
+
+# used to connect to redis instance
+vpc_access_connector:
+  name: projects/alifelived/locations/australia-southeast1/connectors/dev-vpc
+
+# env vars
+env_variables:
+  SECRET_PREFIX: "projects/712355413079/secrets"

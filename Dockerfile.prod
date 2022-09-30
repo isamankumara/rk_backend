@@ -1,0 +1,37 @@
+# Install node 
+FROM node:12
+
+# Set the workdir
+WORKDIR /app
+
+# Copy the package.json to workdir
+COPY package.json package.json
+COPY package-lock.json package-lock.json
+
+# install bash plus node-gyp dependencies and packages
+#RUN apk update && apk upgrade && apk add bash
+#RUN apk add --no-cache --virtual .gyp python3 make g++ \
+#    && npm install bufferutil utf-8-validate \
+#    && apk del .gyp
+
+# Run npm install - install the npm dependencies
+RUN npm install
+
+# Copy application source
+COPY . .
+
+# Compile typescript types
+RUN npm run-script typescript:clean
+RUN npm run-script typescript:compile
+
+# Copy templates to all-dist
+COPY ./src/templates/*.ejs ./all-dist/src/templates
+
+# Expose application ports - (3000 - for keystone and 9229 for debugging)
+EXPOSE 3000 9229
+
+# run build
+RUN npm run-script build
+
+# Start the application
+CMD ["npm", "run-script", "start"]

@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  alifelived-backend:
+    container_name: alifelived-backend
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - '3000:3000'
+      - '9229:9229'
+    links:
+      - redis
+    command: npm run-script nodemon # use this to run / debug the local server
+    volumes:
+      - /Users/max_ckelly/@alifelived/aLifeLivedBackend:/app # set the first part of this to your local source folder
+  redis:
+    container_name: all-redis
+    image: 'redis:5'

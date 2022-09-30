@@ -1,0 +1,11 @@
+steps:
+- id: "Run integration tests"
+  name: node
+  entrypoint: bash
+  args: ['-c', './node_modules/.bin/cross-env BACKEND_BASE_ROUTE=$$BACKEND_BASE_ROUTE ./node_modules/.bin/jest load.test.js']
+  secretEnv: ['BACKEND_BASE_ROUTE']
+availableSecrets:
+  secretManager:
+  - versionName: projects/712355413079/secrets/prod_BACKEND_BASE_ROUTE/versions/latest
+    env: 'BACKEND_BASE_ROUTE'
+timeout: 1000s

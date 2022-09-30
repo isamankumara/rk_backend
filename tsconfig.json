@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "commonjs",
+    "allowJs": true,
+    "checkJs": false,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "outDir": "all-dist",
+    "baseUrl": ".",
+    "skipLibCheck": true,
+    "paths": {
+      "*": ["node_modules/*"]
+    },
+    "noImplicitAny": false
+  },
+  "include": [
+    "src/**/*",
+    "__tests__/**/*",
+    "jest/unitTestData.ts",
+    "jest/server.js",
+    "jest/data",
+    "e2e/**/*",
+    "jest/e2eUtil.ts",
+    "integration/integration.test.ts",
+    "scripts/loadTests/load.bulk.test.ts",
+    "scripts/loadTests/load.story.test.ts"
+  ],
+  "exclude": ["node_modules", "./all-dist"]
+}

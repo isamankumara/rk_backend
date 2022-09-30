@@ -1,0 +1,135 @@
+steps:
+  - id: 'Create tests.env'
+    name: ubuntu
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        echo AWS_ACCESS_KEY=$$AWS_ACCESS_KEY > .env
+        echo AWS_SECRET_ACCESS_KEY=$$AWS_SECRET_ACCESS_KEY >> .env
+        echo CRYPTR_SECRET_KEY=$$CRYPTR_SECRET_KEY >> .env
+        echo JWT_TOKEN_SECRET=$$JWT_TOKEN_SECRET >> .env
+        echo COOKIE_SECRET=$$COOKIE_SECRET >> .env
+        echo OPERATIONAL_BUCKET=$$OPERATIONAL_BUCKET >> .env
+        echo TEST_DB_CONNECTION=$$TEST_DB_CONNECTION >> .env
+        echo TEST_OPERATIONAL_BUCKET=$$TEST_OPERATIONAL_BUCKET >> .env
+        echo TEST_AWS_ACCESS_KEY=$$TEST_AWS_ACCESS_KEY >> .env
+        echo TEST_AWS_SECRET_ACCESS_KEY=$$TEST_AWS_SECRET_ACCESS_KEY >> .env
+        echo GOOGLE_CLIENT_EMAIL=$$GOOGLE_CLIENT_EMAIL >> .env
+        echo GOOGLE_PRIVATE_KEY=$$GOOGLE_PRIVATE_KEY >> .env
+        echo CONTENT_SYNC_TABS=$$CONTENT_SYNC_TABS >> .env
+        echo CONTENT_SYNC_SPREADSHEET_IDENTIFIERS=$$CONTENT_SYNC_SPREADSHEET_IDENTIFIERS >> .env
+        echo INITIALISE_ORGS=$$INITIALISE_ORGS >> .env
+        echo REDIS_HOST=redis >> .env
+        echo REDIS_PORT=6379 >> .env
+        echo TEST_MEDIA_ASSET_SOURCE_BUCKET=unit-testing-assets-public >> .env
+        echo TEST_QUESTION_BUNDLES_BUCKET=a-life-lived-question-bundles-test >> .env
+        more .env
+    secretEnv:
+      [
+        'CRYPTR_SECRET_KEY',
+        'OPERATIONAL_BUCKET',
+        'JWT_TOKEN_SECRET',
+        'TEST_DB_CONNECTION',
+        'TEST_OPERATIONAL_BUCKET',
+        'TEST_AWS_ACCESS_KEY',
+        'TEST_AWS_SECRET_ACCESS_KEY',
+        'COOKIE_SECRET',
+        'GOOGLE_CLIENT_EMAIL',
+        'GOOGLE_PRIVATE_KEY',
+        'CONTENT_SYNC_SPREADSHEET_IDENTIFIERS',
+        'CONTENT_SYNC_TABS',
+        'INITIALISE_ORGS',
+        'AWS_ACCESS_KEY',
+        'AWS_SECRET_ACCESS_KEY',
+      ]
+  - id: 'npm install'
+    name: node:12
+    entrypoint: npm
+    args: ['install']
+    timeout: '900s'
+  - id: 'Run unit tests'
+    name: node:12
+    entrypoint: npm
+    args: ['run', 'test:unit']
+  - id: 'Run integration tests'
+    name: node:12
+    entrypoint: bash
+    args:
+      [
+        '-c',
+        './node_modules/.bin/cross-env VERSION=${SHORT_SHA}-pr${_PR_NUMBER} BACKEND_BASE_ROUTE=$$BACKEND_BASE_ROUTE ./node_modules/.bin/jest ./integration/integration.test.ts --forceExit',
+      ]
+    secretEnv: ['BACKEND_BASE_ROUTE']
+  - id: 'Run e2e tests in docker-compose'
+    name: 'gcr.io/alifelived/docker-compose'
+    args:
+      [
+        '-f',
+        'docker-compose.tests.e2e.yml',
+        'up',
+        '--build',
+        '--abort-on-container-exit',
+        '--exit-code-from',
+        'alifelived-backend',
+      ]
+  # Build the deployment container image
+  - id: 'Build the container image (incl typescript compile and unit tests)'
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'build',
+        '-f',
+        'Dockerfile.prod',
+        '-t',
+        'gcr.io/$PROJECT_ID/all-backend:$COMMIT_SHA',
+        '.',
+      ]
+    # Push the container image to Container Registry
+  - id: 'Push the container image to Container Registry'
+    name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/all-backend:$COMMIT_SHA']
+  - id: 'Deploy to GAE'
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      [
+        '-c',
+        'gcloud config set app/cloud_build_timeout 2600 && gcloud app deploy --image-url=gcr.io/$PROJECT_ID/all-backend:$COMMIT_SHA --no-promote --version=${SHORT_SHA}-pr${_PR_NUMBER}',
+      ]
+    timeout: '2600s'
+availableSecrets:
+  secretManager:
+    - versionName: projects/712355413079/secrets/prod_AWS_ACCESS_KEY/versions/latest
+      env: 'AWS_ACCESS_KEY'
+    - versionName: projects/712355413079/secrets/prod_AWS_SECRET_ACCESS_KEY/versions/latest
+      env: 'AWS_SECRET_ACCESS_KEY'
+    - versionName: projects/712355413079/secrets/prod_CRYPTR_SECRET_KEY/versions/latest
+      env: 'CRYPTR_SECRET_KEY'
+    - versionName: projects/712355413079/secrets/prod_OPERATIONAL_BUCKET/versions/latest
+      env: 'OPERATIONAL_BUCKET'
+    - versionName: projects/712355413079/secrets/prod_JWT_TOKEN_SECRET/versions/latest
+      env: 'JWT_TOKEN_SECRET'
+    - versionName: projects/712355413079/secrets/prod_BACKEND_BASE_ROUTE/versions/latest
+      env: 'BACKEND_BASE_ROUTE'
+    - versionName: projects/712355413079/secrets/prod_CLOUDBUILD_TEST_DB_CONNECTION/versions/latest
+      env: 'TEST_DB_CONNECTION'
+    - versionName: projects/712355413079/secrets/prod_CLOUDBUILD_TEST_OPERATIONAL_BUCKET/versions/latest
+      env: 'TEST_OPERATIONAL_BUCKET'
+    - versionName: projects/712355413079/secrets/prod_CLOUDBUILD_TEST_AWS_ACCESS_KEY/versions/latest
+      env: 'TEST_AWS_ACCESS_KEY'
+    - versionName: projects/712355413079/secrets/prod_CLOUDBUILD_TEST_AWS_SECRET_ACCESS_KEY/versions/latest
+      env: 'TEST_AWS_SECRET_ACCESS_KEY'
+    - versionName: projects/712355413079/secrets/prod_COOKIE_SECRET/versions/latest
+      env: 'COOKIE_SECRET'
+    - versionName: projects/712355413079/secrets/prod_GOOGLE_CLIENT_EMAIL/versions/latest
+      env: 'GOOGLE_CLIENT_EMAIL'
+    - versionName: projects/712355413079/secrets/prod_GOOGLE_PRIVATE_KEY/versions/latest
+      env: 'GOOGLE_PRIVATE_KEY'
+    - versionName: projects/712355413079/secrets/prod_CONTENT_SYNC_SPREADSHEET_IDENTIFIERS/versions/latest
+      env: 'CONTENT_SYNC_SPREADSHEET_IDENTIFIERS'
+    - versionName: projects/712355413079/secrets/prod_INITIALISE_ORGS/versions/latest
+      env: 'INITIALISE_ORGS'
+    - versionName: projects/712355413079/secrets/prod_CONTENT_SYNC_TABS/versions/latest
+      env: 'CONTENT_SYNC_TABS'
+timeout: '5000s'
