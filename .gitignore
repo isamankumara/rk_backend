@@ -1,15 +1,9 @@
-**/package-lock.json
-**/pnpm-lock.yaml
-**/node_modules
-**/dist
-**/.vscode
-**/.DS_Store
-**/yarn.lock
-**/.env.*
-**/.idea
-**/*.iml
-deploy.log
-# Optional eslint cache
-**/.eslintcache
-**/all-dist
-**/__tests__
+node_modules
+.env
+.env.test
+launch.json
+curl.txt
+settings.json
+all-dist
+dist
+__tests__
